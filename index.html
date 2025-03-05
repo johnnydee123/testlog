@@ -140,6 +140,12 @@
 
     <div class="stats">
       <p><strong>Today's Pushup Total:</strong> <span id="todayTotal">0</span></p>
+      
+      <!-- Hide by default using style="display:none" -->
+      <p id="sevenDayRow" style="display: none;">
+        <strong>Seven Day Pushup Total:</strong> <span id="sevenDayTotal">0</span>
+      </p>
+      
       <p><strong>Current Streak:</strong> <span id="currentStreak">0</span> days</p>
     </div>
 
@@ -328,10 +334,29 @@
       const today = getTodayString();
       const todayEntry = pushupData.find(e => e.date === today);
       todayTotalEl.textContent = todayEntry ? todayEntry.totalPushups : 0;
-
+    
+      // If user has fewer than 7 entries total, hide the row
+      const sevenDayRow = document.getElementById('sevenDayRow');
+      if (pushupData.length < 7) {
+        sevenDayRow.style.display = 'none';
+      } else {
+        // Show the row
+        sevenDayRow.style.display = 'block';
+    
+        // Calculate your 7-day total (including zero days or however you prefer).
+        // For example:
+        const sevenDayTotal = getSevenDayTotal(); 
+        document.getElementById('sevenDayTotal').textContent = sevenDayTotal;
+      }
+    
+      // Existing streak logic
       currentStreakEl.textContent = calculateStreak();
+    
+      // Rebuild the history
       updateHistoryList();
     }
+
+
 
     // Build or rebuild the history list
     function updateHistoryList() {
@@ -397,6 +422,26 @@
       return streak;
     }
 
+  // Calculate 7 day total
+  function getSevenDayTotal() {
+    let sum = 0;
+  
+    // Check each day from "today" (daysAgo=0) back to 6 days ago (daysAgo=6)
+    for (let i = 0; i < 7; i++) {
+      const dateStr = getDateStringOffset(i);
+  
+      // Look in pushupData for an entry with this date
+      const entry = pushupData.find(e => e.date === dateStr);
+      if (entry) {
+        sum += entry.totalPushups;
+      }
+      // If no entry found, we implicitly add 0
+    }
+  
+    return sum;
+  }
+
+    
     // Utility: get today's date as YYYY-MM-DD
     function getTodayString() {
       const now = new Date();
@@ -414,6 +459,20 @@
       authMessage.textContent = '';
     }
 
+    // Utility:  Find 7 days ago
+    function getDateStringOffset(daysAgo) {
+    // Make a new Date for [today - daysAgo]
+    const d = new Date();
+    d.setDate(d.getDate() - daysAgo);
+  
+    // Format as YYYY-MM-DD
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+    
     console.log("Boris says: 'Cross-device synergy engaged! I remain invincible!'");
   </script>
 
