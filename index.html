@@ -1,0 +1,421 @@
+<!DOCTYPE html> 
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Pushup Logger - Firebase Modules</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    /* Boris-inspired comedic style (optional) */
+    body {
+      background-color: #000;
+      color: #0f0;
+      font-family: "Courier New", Courier, monospace;
+      margin: 20px;
+    }
+    h1 {
+      color: #0ff;
+      font-size: 2em;
+      margin-bottom: 10px;
+    }
+    h2 {
+      color: #ffa500;
+      margin-top: 20px;
+    }
+    .auth-container, .logger-container {
+      background-color: #111;
+      border: 2px dashed #0f0;
+      padding: 15px;
+      border-radius: 6px;
+      max-width: 400px;
+      margin-bottom: 20px;
+    }
+    .logger-container {
+      display: none; /* Hidden until logged in */
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+    }
+    input {
+      width: 100%;
+      margin-top: 5px;
+      padding: 5px;
+      background-color: #333;
+      color: #0f0;
+      border: 1px solid #0f0;
+      border-radius: 4px;
+    }
+    button {
+      margin-top: 10px;
+      padding: 8px;
+      cursor: pointer;
+      background-color: #444;
+      color: #0f0;
+      border: 2px solid #0f0;
+      border-radius: 4px;
+    }
+    button:hover {
+      background-color: #0f0;
+      color: #000;
+    }
+    .stats {
+      margin-top: 20px;
+      background-color: #222;
+      border: 2px dashed #0f0;
+      border-radius: 4px;
+      padding: 10px;
+      width: fit-content;
+    }
+    .history {
+      margin-top: 20px;
+      background-color: #111;
+      border: 2px dashed #ffa500;
+      border-radius: 4px;
+      padding: 10px;
+      max-width: 500px;
+    }
+    .history ul {
+      padding: 0;
+    }
+    .history li {
+      list-style: none;
+      color: #0ff;
+      margin: 5px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .edit-btn {
+      background-color: #444;
+      color: #ffa500;
+      border: 1px dashed #ffa500;
+      margin-left: 10px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    .edit-btn:hover {
+      background-color: #ffa500;
+      color: #000;
+    }
+    .footer-note {
+      margin-top: 30px;
+      font-size: 0.85em;
+      color: #aaa;
+      max-width: 600px;
+    }
+    #authMessage {
+      color: red;
+      min-height: 20px;
+    }
+  </style>
+</head>
+<body>
+
+<!--  <h1>I Am Invincible! Pushup Logger</h1>  -->
+
+  <!-- AUTH SECTION -->
+  <div class="auth-container" id="authContainer">
+    <h2>Log In or Sign Up</h2>
+    <div id="authMessage"></div>
+    <label>
+      Email:
+      <input type="email" id="emailInput" placeholder="Enter email" />
+    </label>
+    <label>
+      Password:
+      <input type="password" id="passwordInput" placeholder="Enter password" />
+    </label>
+    <button id="loginBtn">Log In</button>
+    <button id="signupBtn">Sign Up</button>
+  </div>
+
+  <!-- LOGGER SECTION -->
+  <div class="logger-container" id="loggerContainer">
+    <h2>Pushup Logger</h2>
+    <div>
+      <input type="number" id="pushupsInput" placeholder="Enter # of pushups" />
+      <button id="logButton">Log Them!</button>
+      <button id="logoutBtn" style="float: right;">Log Out</button>
+    </div>
+
+    <div class="stats">
+      <p><strong>Today's Pushup Total:</strong> <span id="todayTotal">0</span></p>
+      <p><strong>Current Streak:</strong> <span id="currentStreak">0</span> days</p>
+    </div>
+
+    <div class="history">
+      <h2>History</h2>
+      <ul id="historyList"></ul>
+    </div>
+  </div>
+
+<!--  Insret BOTTOM of page Note/MESSAGE HERE
+  <div class="footer-note">
+    <em>*Note:</em> Using Firebase modules for a simple app. Use the same account on multiple devices for real-time sync. 
+    <br><br>
+    “I am invincible!” – Boris, probably
+  </div>
+-->
+  <!-- 
+    COPY AND PASTE YOUR PROVIDED SCRIPTS
+    (PLUS FIREBASE AUTH & FIRESTORE IMPORTS)
+    AT THE BOTTOM OF <body> (HERE),
+    BEFORE USING ANY FIREBASE SERVICES
+  -->
+
+  <script type="module">
+    // 1) Import the functions from the SDKs you need
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-analytics.js";
+    import {
+      getAuth,
+      createUserWithEmailAndPassword,
+      signInWithEmailAndPassword,
+      signOut,
+      onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js";
+    import {
+      getFirestore,
+      doc,
+      setDoc,
+      getDoc,
+      collection,
+      getDocs
+    } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
+
+    // 2) Your web app's Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyCJ9OylLLLuD4kRDwO6NG6ynERiEHkdHtE",
+      authDomain: "pushuplogger-c06ff.firebaseapp.com",
+      projectId: "pushuplogger-c06ff",
+      storageBucket: "pushuplogger-c06ff.firebasestorage.app",
+      messagingSenderId: "159870170707",
+      appId: "1:159870170707:web:1183e2b60a58c2ac0838a6",
+      measurementId: "G-8FYG2MF16G"
+    };
+
+    // 3) Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+
+    // 4) Get Auth and Firestore references
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // ================ Element References =================
+    const authContainer = document.getElementById('authContainer');
+    const loggerContainer = document.getElementById('loggerContainer');
+    const authMessage = document.getElementById('authMessage');
+
+    const emailInput = document.getElementById('emailInput');
+    const passwordInput = document.getElementById('passwordInput');
+    const loginBtn = document.getElementById('loginBtn');
+    const signupBtn = document.getElementById('signupBtn');
+
+    const pushupsInput = document.getElementById('pushupsInput');
+    const logButton = document.getElementById('logButton');
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    const todayTotalEl = document.getElementById('todayTotal');
+    const currentStreakEl = document.getElementById('currentStreak');
+    const historyList = document.getElementById('historyList');
+
+    // In-memory array of pushup data: { date, totalPushups }
+    let pushupData = [];
+
+    // ================ Authentication Logic =================
+
+    // Sign Up
+    signupBtn.addEventListener('click', async () => {
+      clearAuthMessage();
+      const email = emailInput.value;
+      const password = passwordInput.value;
+
+      try {
+        await createUserWithEmailAndPassword(auth, email, password);
+        // After success, user is automatically logged in
+      } catch (error) {
+        setAuthMessage(error.message);
+      }
+    });
+
+    // Log In
+    loginBtn.addEventListener('click', async () => {
+      clearAuthMessage();
+      const email = emailInput.value;
+      const password = passwordInput.value;
+
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+      } catch (error) {
+        setAuthMessage(error.message);
+      }
+    });
+
+    // Log Out
+    logoutBtn.addEventListener('click', async () => {
+      await signOut(auth);
+    });
+
+    // React to Auth State Changes
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        // User is logged in
+        authContainer.style.display = 'none';
+        loggerContainer.style.display = 'block';
+        // Load pushup data
+        await loadPushupData();
+        updateUI();
+      } else {
+        // User is logged out
+        authContainer.style.display = 'block';
+        loggerContainer.style.display = 'none';
+        pushupData = [];
+      }
+    });
+
+    // ================ Pushup Logger Functions =================
+
+    // Load user's pushup data from Firestore
+    async function loadPushupData() {
+      const user = auth.currentUser;
+      if (!user) return;
+
+      const pushupsCollection = collection(db, 'users', user.uid, 'pushups');
+      const snapshot = await getDocs(pushupsCollection);
+
+      pushupData = snapshot.docs.map(docSnap => ({
+        date: docSnap.id,
+        totalPushups: docSnap.data().totalPushups
+      }));
+    }
+
+    // Log new pushups for today
+    logButton.addEventListener('click', async () => {
+      const pushups = parseInt(pushupsInput.value, 10);
+      if (isNaN(pushups) || pushups <= 0) {
+        alert("Please enter a valid number of pushups!");
+        return;
+      }
+      await logPushups(pushups);
+      pushupsInput.value = '';
+    });
+
+    async function logPushups(pushups) {
+      const user = auth.currentUser;
+      if (!user) return;
+
+      const today = getTodayString();
+      let todayEntry = pushupData.find(e => e.date === today);
+
+      if (todayEntry) {
+        todayEntry.totalPushups += pushups;
+      } else {
+        todayEntry = { date: today, totalPushups: pushups };
+        pushupData.push(todayEntry);
+      }
+
+      const docRef = doc(db, 'users', user.uid, 'pushups', today);
+      await setDoc(docRef, {
+        totalPushups: todayEntry.totalPushups
+      });
+
+      updateUI();
+    }
+
+    // Update UI
+    function updateUI() {
+      const today = getTodayString();
+      const todayEntry = pushupData.find(e => e.date === today);
+      todayTotalEl.textContent = todayEntry ? todayEntry.totalPushups : 0;
+
+      currentStreakEl.textContent = calculateStreak();
+      updateHistoryList();
+    }
+
+    // Build or rebuild the history list
+    function updateHistoryList() {
+      const sortedData = [...pushupData].sort((a, b) => new Date(b.date) - new Date(a.date));
+      historyList.innerHTML = '';
+
+      sortedData.forEach(entry => {
+        const li = document.createElement('li');
+        li.innerHTML = `<span>${entry.date}: ${entry.totalPushups} pushups</span>`;
+
+        // Edit Button
+        const editBtn = document.createElement('button');
+        editBtn.textContent = 'Edit';
+        editBtn.classList.add('edit-btn');
+        editBtn.addEventListener('click', async () => {
+          const newTotalStr = prompt(`Enter new total for ${entry.date}:`, entry.totalPushups);
+          if (newTotalStr !== null) {
+            const newTotal = parseInt(newTotalStr, 10);
+            if (!isNaN(newTotal) && newTotal >= 0) {
+              entry.totalPushups = newTotal;
+
+              const user = auth.currentUser;
+              const docRef = doc(db, 'users', user.uid, 'pushups', entry.date);
+              await setDoc(docRef, {
+                totalPushups: newTotal
+              });
+
+              updateUI();
+            } else {
+              alert("Invalid input. Please enter a non-negative number.");
+            }
+          }
+        });
+        li.appendChild(editBtn);
+        historyList.appendChild(li);
+      });
+    }
+
+    // Calculate consecutive-day streak
+    function calculateStreak() {
+      const sortedData = [...pushupData].sort((a, b) => new Date(a.date) - new Date(b.date));
+      let streak = 0;
+      let prevDate = null;
+
+      for (let i = sortedData.length - 1; i >= 0; i--) {
+        const current = sortedData[i];
+        if (current.totalPushups > 0) {
+          if (!prevDate) {
+            streak++;
+            prevDate = new Date(current.date);
+          } else {
+            const currentDate = new Date(current.date);
+            const dayDiff = (prevDate - currentDate) / (1000 * 60 * 60 * 24);
+            if (dayDiff === 1) {
+              streak++;
+              prevDate = currentDate;
+            } else {
+              break;
+            }
+          }
+        }
+      }
+      return streak;
+    }
+
+    // Utility: get today's date as YYYY-MM-DD
+    function getTodayString() {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, '0');
+      const d = String(now.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    // Utility: show/hide auth error message
+    function setAuthMessage(msg) {
+      authMessage.textContent = msg;
+    }
+    function clearAuthMessage() {
+      authMessage.textContent = '';
+    }
+
+    console.log("Boris says: 'Cross-device synergy engaged! I remain invincible!'");
+  </script>
+
+</body>
+</html>
