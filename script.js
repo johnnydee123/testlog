@@ -2,13 +2,14 @@
 // 1. Initialize Firebase
 // -----------------------------------------------
 const firebaseConfig = {
-  // Replace these with your actual config values!
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "SENDER_ID",
-  appId: "APP_ID"
+  
+  apiKey: "AIzaSyCJ9OylLLLuD4kRDwO6NG6ynERiEHkdHtE",
+      authDomain: "pushuplogger-c06ff.firebaseapp.com",
+      projectId: "pushuplogger-c06ff",
+      storageBucket: "pushuplogger-c06ff.firebasestorage.app",
+      messagingSenderId: "159870170707",
+      appId: "1:159870170707:web:1183e2b60a58c2ac0838a6",
+      measurementId: "G-8FYG2MF16G"
 };
 
 firebase.initializeApp(firebaseConfig);
